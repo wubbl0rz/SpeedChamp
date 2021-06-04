@@ -40,6 +40,7 @@ const App = () => {
 		const start = new Date();
 
 		axios.post(`${BASE_URL}/speedchamp`, Buffer.from(data), {
+			headers: { "Content-Type": "text/octet-stream" },
 			onUploadProgress: (progressEvent) => {
 				calculateSpeed(progressEvent, start);
 			},
@@ -50,6 +51,8 @@ const App = () => {
 		.then(response => {
 			const end = new Date();
 			const duration = end - start;
+
+			console.log(response);
 
 			setResult(result => ({
 				...result,
