@@ -3,10 +3,14 @@ import axios from "axios";
 import StatsItem from "./StatsItem";
 
 const selectOptions = [
-	{ value: 10 * Math.pow(2, 20), label: "10 MB" },
+	// { value: 10 * Math.pow(2, 20), label: "10 MB" },
+	{ value: 20_000_000, label: "20 MB" },
 	{ value: 100 * Math.pow(2, 20), label: "100 MB" },
-	{ value: 1000 * Math.pow(2, 20), label: "1000 MB" }
+	// { value: 1000 * Math.pow(2, 20), label: "1000 MB" }
 ];
+
+// const BASE_URL = process.env.NODE_ENV === "development" ? "http://localhost:5000": "https://speedchamp.org";
+const BASE_URL = "https://speedchamp.org";
 
 const App = () => {
 	const [meta, setMeta] = useState({
@@ -14,7 +18,9 @@ const App = () => {
 	});
 
 	const [result, setResult] = useState({
-		duration: undefined
+		duration: undefined,
+		upload: undefined,
+		download: undefined
 	});
 
 	const initArray = () => {
@@ -30,32 +36,40 @@ const App = () => {
 	};
 
 	const start = () => {
-		const start = new Date();
 		const data = initArray();
+		const start = new Date();
 
-		axios.post("http://localhost:5000/speedchamp", {}, {
+		axios.post(`${BASE_URL}/speedchamp`, Buffer.from(data), {
 			onUploadProgress: (progressEvent) => {
-				console.log("on upload");
-				calculateSpeed(progressEvent);
+				calculateSpeed(progressEvent, start);
 			},
-			onDownloadProgress: (progressEvent) => {
-				console.log("on download");
-				console.log(progressEvent);
+			onDownloadProgress: (progressEvent, start) => {
+
 			}
 		})
 		.then(response => {
 			const end = new Date();
 			const duration = end - start;
 
-			setResult({
+			setResult(result => ({
 				...result,
 				duration
-			});
+			}));
 		})
 	};
 
-	const calculateSpeed = (pe) => {
-			console.log(pe.loaded, "von", pe.total);
+	const calculateSpeed = (pe, start) => {
+		const now = new Date();
+
+		if (pe.lengthComputable && pe.total > 0) {
+			let bps = pe.loaded / ((now - start) / 1000);
+			let mbps = bps / 1024 / 1024 * 8;
+
+			setResult(result => ({
+				...result,
+				upload: mbps
+			}));
+		}
 	};
 
 	const formatBytes = (bytes, decimals = 2) => {
@@ -77,7 +91,7 @@ const App = () => {
 			<div className="text-center space-y-3">
 				<button
 					className="px-6 py-3 text-center bg-blue-600 font-bold text-white rounded"
-					onClick={start}
+					onClick={() => start()}
 				>
 					Speedtest starten
 				</button>
@@ -89,13 +103,17 @@ const App = () => {
 			</div>
 			<div className="grid grid-cols-3 gap-6 text-center">
 				<StatsItem prefix="Ping" suffix="ms">
-					12
+					-
 				</StatsItem>
 				<StatsItem prefix="Download" suffix="Mbit/s">
-					554
+				{!!result.download ? (
+						<span>{result.upload.toFixed(2)}</span>
+					) : "-"}
 				</StatsItem>
 				<StatsItem prefix="Upload" suffix="Mbit/s">
-					123
+					{!!result.upload ? (
+						<span>{result.upload.toFixed(2)}</span>
+					) : "-"}
 				</StatsItem>
 			</div>
 			{!!result.duration && (
