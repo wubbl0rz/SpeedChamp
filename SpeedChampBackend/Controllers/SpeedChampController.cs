@@ -16,9 +16,32 @@ namespace SpeedChamp.Controllers
     public SpeedChampController()
     {
     }
+    
+    // [HttpPost("/ping")]
+    // public async Task<object> Ping()
+    // {
+    // }
 
-    [HttpPost("/speedchamp")]
-    public async Task<object> SpeedChamp()
+    [HttpGet("/down")]
+    public async Task Down()
+    {
+      var downloadSize = 20_000_000; //20 megabytes
+      var buffer = new byte[downloadSize];
+
+      var sw = Stopwatch.StartNew();
+      
+      await Response.Body.WriteAsync(buffer);
+      
+      sw.Stop();
+      
+      var downloadBytesPerSecond = ByteSize.FromBytes(downloadSize / sw.Elapsed.TotalSeconds);
+      var downloadMBitsPerSecond = downloadBytesPerSecond.Bits / 1_000_000;
+
+      Console.WriteLine($"DOWNLOAD SPEED: {downloadMBitsPerSecond} Mbit/s");
+    }
+
+    [HttpPost("/up")]
+    public async Task<object> Up()
     {
       var uploadSize = 20_000_000; //20 megabytes
       var buffer = new byte[uploadSize];
@@ -38,21 +61,17 @@ namespace SpeedChamp.Controllers
       if (count == uploadSize)
       {
         var uploadBytesPerSecond = ByteSize.FromBytes(uploadSize / sw.Elapsed.TotalSeconds);
-
-        Console.WriteLine(uploadBytesPerSecond.MebiBytes);
+        var uploadMBitsPerSecond = uploadBytesPerSecond.Bits / 1_000_000;
+        
+        Console.WriteLine($"UPLOAD SPEED: {uploadMBitsPerSecond} Mbit/s");
         
         return new
         {
-          upload = uploadBytesPerSecond.MebiBytes
+          upload = uploadMBitsPerSecond
         };
       }
 
-      Console.WriteLine(count);
-
-      return new
-      {
-        upload = -1
-      };
+      throw new Exception("KEKWait");
     }
   }
 }
