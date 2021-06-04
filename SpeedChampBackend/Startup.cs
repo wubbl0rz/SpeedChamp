@@ -58,6 +58,8 @@ namespace SpeedChamp
         // app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "SpeedChamp v1"));
       }
 
+      app.UseFileServer();
+
       app.UseRouting();
 
       app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
