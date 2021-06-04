@@ -13,7 +13,6 @@ namespace SpeedChamp.Controllers
     {
         public SpeedChampController()
         {
-
         }
 
         [HttpPost("/speedchamp")]
