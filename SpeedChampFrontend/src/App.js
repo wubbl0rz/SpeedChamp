@@ -5,7 +5,7 @@ import StatsItem from "./StatsItem";
 const selectOptions = [
 	// { value: 10 * Math.pow(2, 20), label: "10 MB" },
 	{ value: 20_000_000, label: "20 MB" },
-	{ value: 100 * Math.pow(2, 20), label: "100 MB" },
+	// { value: 100 * Math.pow(2, 20), label: "100 MB" },
 	// { value: 1000 * Math.pow(2, 20), label: "1000 MB" }
 ];
 
@@ -35,44 +35,52 @@ const App = () => {
 		return longInt8View;
 	};
 
-	const start = () => {
+	const start = async () => {
 		const data = initArray();
 		const start = new Date();
 
-		axios.post(`${BASE_URL}/speedchamp`, Buffer.from(data), {
+		await axios.get(`${BASE_URL}/down`, {
+			onDownloadProgress: (progressEvent) => {
+				setResult(result => ({
+					...result,
+					download: calculateSpeed(progressEvent, start)
+				}))
+			}
+		});
+
+		axios.post(`${BASE_URL}/up`, Buffer.from(data), {
 			headers: { "Content-Type": "text/octet-stream" },
 			onUploadProgress: (progressEvent) => {
-				calculateSpeed(progressEvent, start);
-			},
-			onDownloadProgress: (progressEvent, start) => {
-
+				setResult(result => ({
+					...result,
+					upload: calculateSpeed(progressEvent, start)
+				}))
 			}
 		})
 		.then(response => {
-			const end = new Date();
+			/* const end = new Date();
 			const duration = end - start;
-
-			console.log(response);
 
 			setResult(result => ({
 				...result,
 				duration
-			}));
-		})
+			})); */
+		});
 	};
 
 	const calculateSpeed = (pe, start) => {
 		const now = new Date();
 
-		if (pe.lengthComputable && pe.total > 0) {
-			let bps = pe.loaded / ((now - start) / 1000);
-			let mbps = bps / 1024 / 1024 * 8;
+		/* if (!(pe.lengthComputable && pe.total > 0)) {
+			return undefined;
+		} */
 
-			setResult(result => ({
-				...result,
-				upload: mbps
-			}));
-		}
+		console.log(pe, start);
+
+		let bps = pe.loaded / ((now - start) / 1000);
+		let mbps = bps / 1024 / 1024 * 8;
+
+		return mbps;
 	};
 
 	const formatBytes = (bytes, decimals = 2) => {
@@ -88,9 +96,12 @@ const App = () => {
 		return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + " " + sizes[i];
 	};
 
+	// console.log(result);
+
 	return (
 		<div className="mx-auto w-3/5 space-y-12">
-			<h1 className="text-4xl font-bold pt-6 text-center">SpeedChamp</h1>
+			{/* <img src="/kekw.jpg" className="w-1/5 mt-12 mx-auto" /> */}
+			<h1 className="text-4xl font-bold text-center mt-6">SpeedChamp</h1>
 			<div className="text-center space-y-3">
 				<button
 					className="px-6 py-3 text-center bg-blue-600 font-bold text-white rounded"
@@ -110,7 +121,7 @@ const App = () => {
 				</StatsItem>
 				<StatsItem prefix="Download" suffix="Mbit/s">
 				{!!result.download ? (
-						<span>{result.upload.toFixed(2)}</span>
+						<span>{result.download.toFixed(2)}</span>
 					) : "-"}
 				</StatsItem>
 				<StatsItem prefix="Upload" suffix="Mbit/s">
@@ -120,8 +131,11 @@ const App = () => {
 				</StatsItem>
 			</div>
 			{!!result.duration && (
-				<div className="text-center text-3xl font-bold">
-					{result.duration / 1000}s
+				<div className="text-center">
+					Dauer
+					<div className="text-3xl font-bold">
+						{result.duration / 1000}s
+					</div>
 				</div>
 			)}
 		</div>
